@@ -10,9 +10,9 @@ remove_ws([X | Xs], Ys) :- control_ws(X), !, remove_ws(Xs, Ys).
 remove_ws([X | Xs], Ys) :- Ys = [X | Xs], !.
 
 %controllo primo carattere
-f_char(Char, [X | Xs], Char2) :- string_codes(Char, [Y | _]),
+f_char(Char, [X | Xs], Chars2) :- string_codes(Char, [Y | _]),
     Y = X,
-    Char2 = Xs.
+    Chars2 = Xs.
 
 %json object
 %Caso in cui dentro è vuoto
@@ -34,6 +34,8 @@ json_string(CharsIn, CharsOut, Key) :-
 %json value
 json_value(CharsIn, CharsOut, Object) :-
     json_string(CharsIn, CharsOut, Object), !.
+json_value(CharsIn, CharsOut, Object) :-
+    object_nested(CharsIn, CharsOut, Object), !.
 
 
 
@@ -57,5 +59,25 @@ list_is_empty(List):- List = [], !.
 %oggetti innestati tra di loro
 object_nested(CharsIn, CharsOut, Object)
         :-json_obj(CharsIn, CharsOut, [], Object),!.
+pair(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
+    json_string(CharsIn, Chars2, Key),
+    remove_ws(Chars2, Chars3),
+    f_char(":",Chars3, Chars4),
+    remove_ws(Chars4, Chars5),
+    json_value(Chars5, CharsOut, Value),
+    append(ObjectIn, [(Key, Value)], ObjectOut).
+is_number([X | Xs], [X | Xs], []) :-
+    X < 48, !.
+is_number([X | Xs], [X | Xs], []) :-
+    X > 57, !.
+is_number([X | Xs], Zs, [X | Ys]) :-
+    is_number(Xs, Zs, Ys).
+members(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
+    .
+
+
+
+
+
 
 
