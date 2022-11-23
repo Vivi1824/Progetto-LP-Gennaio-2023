@@ -31,6 +31,10 @@ json_string(CharsIn, CharsOut, Key) :-
     creation_ss(Chars2, Chars3, Result),
     f_char("\"", Chars3, CharsOut),
     string_codes(Key, Result).
+%json value
+json_value(CharsIn, CharsOut, Object) :-
+    json_string(CharsIn, CharsOut, Object), !.
+
 
 
 %creazione stringhe inizio
@@ -45,6 +49,10 @@ creation_ds([X | _], _, _) :- string_codes("\'", [Char | _]),
 creation_ds([X | Xs], [X | Xs], []) :- string_codes("\"", [Char | _]),
     X = Char, !.
 creation_ds([X | Xs], Zs, [X | Ys]) :- creation_ds(Xs, Zs, Ys).
+
+%controllo liste vuote
+list_not_empty(List):- List \= [], !.
+list_is_empty(List):- List = [], !.
 
 
 

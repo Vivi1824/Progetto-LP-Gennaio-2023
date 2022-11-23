@@ -35,12 +35,14 @@ json_string(CharsIn, CharsOut, Key) :-
 json_value(CharsIn, CharsOut, Object) :-
     json_string(CharsIn, CharsOut, Object), !.
 
+
+
 %creazione stringhe inizio
 creation_ss([X | _], _, _) :- string_codes("\"", [Char | _]),
     X = Char, !, fail.
 creation_ss([X | Xs], [X | Xs], []) :- string_codes("\'", [Char | _]),
     X = Char, !.
-creation_ss([X | Xs], Zs, [X | Ys]) :- creation_ss(Xs, Zs, Ys).
+screation_ss([X | Xs], Zs, [X | Ys]) :- creation_ss(Xs, Zs, Ys).
 %creazione stringhe fine
 creation_ds([X | _], _, _) :- string_codes("\'", [Char | _]),
     X = Char, !, fail.
@@ -48,5 +50,12 @@ creation_ds([X | Xs], [X | Xs], []) :- string_codes("\"", [Char | _]),
     X = Char, !.
 creation_ds([X | Xs], Zs, [X | Ys]) :- creation_ds(Xs, Zs, Ys).
 
+%controllo liste vuote
+list_not_empty(List):- List \= [], !.
+list_is_empty(List):- List = [], !.
+
+%oggetti innestati tra di loro
+object_nested(CharsIn, CharsOut, Object)
+        :-json_obj(CharsIn, CharsOut, [], Object),!.
 
 
