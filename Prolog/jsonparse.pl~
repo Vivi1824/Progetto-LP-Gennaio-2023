@@ -1,3 +1,11 @@
+json_parse(String, Object):-
+    string_codes(String, Chars),
+    remove_ws(Chars, Chars1),
+    json_obj(Chars1, Chars2, [], Object),
+    remove_ws(Chars2, Chars3),
+    list_is_empty(Chars3), !.
+
+
 %controllo e rimozione spazi bianchi, le linee e i tab
 white_space(X) :- char_code(' ', Y), X = Y, !.
 new_line(X) :- char_code('\n', Y), X = Y, !.
@@ -21,6 +29,15 @@ json_obj(CharsIn, CharsOut, ObjectIn, jsonobj(ObjectOut)) :-
     remove_ws(Chars1, Chars2),
     f_char("}", Chars2, CharsOut), !,
     ObjectIn = ObjectOut.
+json_obj(CharsIn, CharsOut, ObjectIn, jsonobj(ObjectOut)):-
+    f_char("{", CharsIn, Chars1),
+    !,
+    remove_ws(Chars1, Chars2),
+    members(Chars2,Chars3, ObjectIn, ObjectOut),
+    remove_ws(Chars3, Chars4),
+    f_char("}", Chars4, CharsOut).
+
+
 json_string(CharsIn, CharsOut, Key) :-
     f_char("\'", CharsIn, Chars2), !,
     creation_ss(Chars2, Chars3, Result),
@@ -59,7 +76,10 @@ list_is_empty(List):- List = [], !.
 %oggetti innestati tra di loro
 object_nested(CharsIn, CharsOut, Object)
         :-json_obj(CharsIn, CharsOut, [], Object),!.
-match(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
+object_nested(CharsIn, CharsOut, Object)
+        :-json_array(CharsIn, CharsOut, [], Object), !.
+
+pair(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
     json_string(CharsIn, Chars2, Key),
     remove_ws(Chars2, Chars3),
     f_char(":",Chars3, Chars4),
@@ -72,11 +92,41 @@ is_number([X | Xs], [X | Xs], []) :-
     X > 57, !.
 is_number([X | Xs], Zs, [X | Ys]) :-
     is_number(Xs, Zs, Ys).
+members(CharsIn, CharsOut, ObjectIn, ObjectOut1) :-
+   pair(CharsIn, Chars2, ObjectIn, ObjectOut),
+   remove_ws(Chars2, Chars3),
+   f_char(",", Chars3, Chars4),
+   remove_ws(Chars4, Chars5),
+   members(Chars5, CharsOut, ObjectOut, ObjectOut1),!.
+members(CharsIn, CharsOut, ObjectIn, ObjectOut):-
+    pair(CharsIn, CharsOut, ObjectIn,ObjectOut),!.
+
+elements(CharsIn, CharsOut, ObjectIn, ObjectOut2):-
+    json_value(CharsIn, Chars2, ObjectOut),
+    remove_ws(Chars2, Chars3),
+    f_char(",", Chars3, Chars4),
+    remove_ws(Chars4, Chars5),!,
+    append(ObjectIn,[ObjectOut], ObjectOut1),
+    elements(Chars5, CharsOut, ObjectOut1, ObjectOut2).
+elements(CharsIn,CharsOut,ObjectIn,ObjectOut1):-
+    json_value(CharsIn, CharsOut, ObjectOut),
+    append(ObjectIn, [ObjectOut], ObjectOut1), !.
 
 
+%Controllo Array
+json_array(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)):-
+    f_char("[", CharsIn, Chars1),
+    remove_ws(Chars1, Chars2),
+    f_char("]", Chars2, CharsOut),!,
+    ObjectIn = ObjectOut.
 
-
-
+json_array(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)):-
+    f_char("[", CharsIn, Chars1),
+    !,
+    remove_ws(Chars1, Chars2),
+    elements(Chars2, Chars3, ObjectIn, ObjectOut),
+    remove_ws(Chars3, Chars4),
+    f_char("]", Chars4, CharsOut).
 
 
 
