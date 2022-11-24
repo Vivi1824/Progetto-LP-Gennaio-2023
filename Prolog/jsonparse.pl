@@ -134,5 +134,87 @@ json_array(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)):-
     remove_ws(Chars3, Chars4),
     f_char("]", Chars4, CharsOut).
 
+%Fallisce se l'elemento è vuoto
+get(_,[],_):-!, fail.
+%Ritorna un identity se il campo è vuoto
+get(X,void,X):-!.
+%Non trova nulla in un oggetto/array
+get(json_obj(),_,_):-!, fail.
+get(json_array(),_,_):-!, fail.
+%Altrimenti
+get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
+get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
+    get(Temp, Xs, Result).
+get(Obj, X, Result):- get_elements(Obj, X, Result), !.
 
+
+%Prende gli elementi
+get_elements(Obj, Fields, Result):- json_obj([Y|Ys])=Obj,!,
+    get_member([Y|Ys], Fields, Result).
+get_elements(Obj, Index, Result):- json_array([X|Xs])=Obj,!,
+    get_member_pos([X|Xs], Index, Result).
+
+get_member([],_,_):- fail.
+get_member([(X,Y)|_], Z, Result):- string(Z), X=Z, !,
+    Result = Y.
+get_member([_|Xs],Z,Result):- string(Z),
+    get_member(Xs, Z, Result).
+
+
+%Cerca un elemento data la posizione
+get_member_pos([],[_],_):-fail.
+get_member_pos([X|_], Y, Result):- number(Y), Y=0, !, Result=X.
+get_member_pos([_|Xs], Y, Result):- number(Y), Z is Y-1,
+    get_member_pos(Xs, Z, Result).
+
+
+
+%Lettura e Scrittura su file
+jsonread(Filename, JSON):- open(Filename, read, In),
+    read_stream_to_codes(In, X), close(In),
+    atom_codes(String, X),json_parse(String, JSON).
+
+jsondump(JSON, Filename):- open(Filename, write, Out),
+    json_print(JSON, String), write(Out, String),
+    close(Out).
+
+json_print(JSON, String):- JSON=json_obj([]), !,
+    String = "{}".
+json_print(JSON, String):- json_obj([Y|Ys]) = JSON, !,
+    concat("", "{", String1), print_object([Y|Ys], "", String2),
+    concat(String1, String2, String3),
+    concat(String3, "}", String).
+json_print(JSON, String):- JSON = json_array([]), !,
+    String = "[]".
+json_print(JSON, String):- json_array([Y|Ys]) = JSON, !,
+    concat("", "[", String1), print_array([Y|Ys], "", String2),
+    concat(String1, String2, String3),
+    concat(String3, "]", String).
+
+print_object([], String, Result):-!,
+    string_concat(Temp,",", String), Result = Temp.
+print_object([(X,Y)|Xs],String, Result):-
+    print_element(X,String1),
+    string_concat(String, String1, String2),
+    string_concat(String2, ":", String3),
+    print_element(Y, String4),
+    string_concat(String3, String4, String5),
+    string_concat(String5, ",", String6),
+    print_object(Xs, String6, Result).
+
+print_array([], String, Result):-!,
+    string_concat(Temp, ",", String), Result = Temp.
+print_array([X|Xs], String, Result):-
+    print_element(X, String1),
+    string_concat(String, String1, String2),
+    string_concat(String2, ",", String3),
+    print_array(Xs, String3, Result).
+
+print_element(X, Result):- number(X), !, Result = X.
+print_element(X, Result):- json_print(X, Result), !.
+print_element(X, Result):- string(X), !,
+    string_concat("","\"", String1),
+    string_concat(String1, X, String2),
+    string_concat(String2,"\"", String3),
+    Result = String3.
 

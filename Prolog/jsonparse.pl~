@@ -5,6 +5,12 @@ json_parse(String, Object):-
     remove_ws(Chars2, Chars3),
     list_is_empty(Chars3), !.
 
+json_parse(String, Object):-
+    string_codes(String, Chars),
+    remove_ws(Chars,Chars1),
+    json_array(Chars1, Chars2, [], Object),
+    remove_ws(Chars2, Chars3),
+    list_is_empty(Chars3), !.
 
 %controllo e rimozione spazi bianchi, le linee e i tab
 white_space(X) :- char_code(' ', Y), X = Y, !.
@@ -128,5 +134,48 @@ json_array(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)):-
     remove_ws(Chars3, Chars4),
     f_char("]", Chars4, CharsOut).
 
+%Fallisce se l'elemento è vuoto
+get(_,[],_):-!, fail.
+%Ritorna un identity se il campo è vuoto
+get(X,void,X):-!.
+%Non trova nulla in un oggetto/array
+get(json_obj(),_,_):-!, fail.
+get(json_array(),_,_):-!, fail.
+%Altrimenti
+get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
+get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
+    get(Temp, Xs, Result).
+get(Obj, X, Result):- get_elements(Obj, X, Result), !.
+
+
+%Prende gli elementi
+get_elements(Obj, Fields, Result):- json_obj([Y|Ys])=Obj,!,
+    get_member([Y|Ys], Fields, Result).
+get_elements(Obj, Index, Result):- json_array([X|Xs])=Obj,!,
+    get_member_pos([X|Xs], Index, Result).
+
+get_member([],_,_):- fail.
+get_member([(X,Y)|_], Z, Result):- string(Z), X=Z, !,
+    Result = Y.
+get_member([_|Xs],Z,Result):- string(Z),
+    get_member(Xs, Z, Result).
+
+
+%Cerca un elemento data la posizione
+get_member_pos([],[_],_):-fail.
+get_member_pos([X|_], Y, Result):- number(Y), Y=0, !, Result=X.
+get_member_pos([_|Xs], Y, Result):- number(Y), Z is Y-1,
+    get_member_pos(Xs, Z, Result).
+
+
+
+%Lettura e Scrittura su file
+jsonread(Filename, JSON):- open(Filename, read, In),
+    read_stream_to_codes(In, X), close(In),
+    atom_codes(String, X),json_parse(String, JSON).
+
+jsondump(JSON, Filename):- open(Filename, write, Out),
+    json_print(JSON, String), write(Out, String),
+    close(Out).
 
 
