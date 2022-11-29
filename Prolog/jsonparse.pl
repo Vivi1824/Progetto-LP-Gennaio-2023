@@ -203,23 +203,26 @@ json_array(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)):-
     f_char("]", Chars4, CharsOut).
 
 %Fallisce se l'elemento è vuoto
-get(_,[],_):-!, fail.
+json_get(_,[],_):-!, fail.
 %Ritorna un identity se il campo è vuoto
-get(X,void,X):-!.
+json_get(X,void,X):-!.
 %Non trova nulla in un oggetto/array
-get(json_obj(),_,_):-!, fail.
-get(json_array(),_,_):-!, fail.
+json_get(json_obj(),_,_):-!, fail.
+json_get(json_array(),_,_):-!, fail.
 %Altrimenti
-get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
-get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
-    get(Temp, Xs, Result).
-get(Obj, X, Result):- get_elements(Obj, X, Result), !.
+json_get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
+json_get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
+    json_get(Temp, Xs, Result).
+json_get(Obj, X, Result):- get_elements(Obj, X, Result), !.
 
 
-%Prende gli elementi
-get_elements(Obj, Fields, Result):- json_obj([Y|Ys])=Obj,!,
+% jsonaccess risulta vero quando Result è recuperabile
+% seguendo la catena di campi presenti in Fields a partire
+% da Jsonobj.
+jsonaccess(Jsonobj, Fields, Result):- json_obj([Y|Ys])=Jsonobj,
+    !,
     get_member([Y|Ys], Fields, Result).
-get_elements(Obj, Index, Result):- json_array([X|Xs])=Obj,!,
+jsonaccess(Jsonobj, Index, Result):- json_array([X|Xs])=Jsonobj,!,
     get_member_pos([X|Xs], Index, Result).
 
 get_member([],_,_):- fail.

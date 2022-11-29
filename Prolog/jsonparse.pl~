@@ -63,6 +63,7 @@ json_string(CharsIn, CharsOut, Key) :-
     f_char("\"", Chars3, CharsOut),
     string_codes(Key, Result).
 
+%se numero positivo
 number(CharsIn, CharsOut, Object):-
     f_char("+", CharsIn, Chars2),
     char_code('+', Plus),
@@ -84,6 +85,42 @@ number(CharsIn, CharsOut, Object):-
     append([Plus], Value2, Value),
     number_codes(Object,Value).
 
+%se numero negativo
+number(CharsIn,CharsOut,Object):-
+    f_char("-",CharsIn, Chars2),
+    char_code('-',Minus),
+    creation_number(Chars2, Chars3, Value1),
+    list_not_empty(Value1),
+    append([Minus], Value1, Value1Minus),
+    f_char(".", Chars3, Chars4),!,
+    char_code(".",Dot),
+    append(Value1Minus,[Dot],Value2),
+    creation_number(Chars4, CharsOut, Value3),
+    list_not_empty(Value3),
+    append(Value2, Value3, Value),
+    number_codes(Object,Value).
+number(CharsIn, CharsOut, Object):-
+    f_char("-",CharsIn, Chars2),
+    char_code('-', Minus),
+    creation_number(Chars2, CharsOut, Value2),
+    list_not_empty(Value2),!,
+    append([Minus], Value2, Value),
+    number_codes(Object, Value).
+
+%se il numero è float
+number(CharsIn, CharsOut, Object):-
+    creation_number(CharsIn, Chars1, Value1),
+    f_char(".",Chars1, Chars2),
+    char_code('.',Dot),
+    append(Value1, [Dot], Value1Dot),!,
+    creation_number(Chars2, CharsOut, Value2),
+    append(Value1Dot, Value2, Value),
+    list_not_empty(Value),
+    number_codes(Object, Value).
+number(CharsIn, CharsOut, Object):-
+    creation_number(CharsIn, CharsOut, Value),
+    list_not_empty(Value),
+    number_codes(Object,Value).
 
 %json value
 json_value(CharsIn, CharsOut, Object) :-
@@ -166,23 +203,24 @@ json_array(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)):-
     f_char("]", Chars4, CharsOut).
 
 %Fallisce se l'elemento è vuoto
-get(_,[],_):-!, fail.
+json_get(_,[],_):-!, fail.
 %Ritorna un identity se il campo è vuoto
-get(X,void,X):-!.
+json_get(X,void,X):-!.
 %Non trova nulla in un oggetto/array
-get(json_obj(),_,_):-!, fail.
-get(json_array(),_,_):-!, fail.
+json_get(json_obj(),_,_):-!, fail.
+json_get(json_array(),_,_):-!, fail.
 %Altrimenti
-get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
-get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
-    get(Temp, Xs, Result).
-get(Obj, X, Result):- get_elements(Obj, X, Result), !.
+json_get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
+json_get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
+    json_get(Temp, Xs, Result).
+json_get(Obj, X, Result):- get_elements(Obj, X, Result), !.
 
 
 %Prende gli elementi
-get_elements(Obj, Fields, Result):- json_obj([Y|Ys])=Obj,!,
+jsonaccess(Jsonobj, Fields, Result):- json_obj([Y|Ys])=Jsonobj,
+    !,
     get_member([Y|Ys], Fields, Result).
-get_elements(Obj, Index, Result):- json_array([X|Xs])=Obj,!,
+jsonaccess(Jsonobj, Index, Result):- json_array([X|Xs])=Jsonobj,!,
     get_member_pos([X|Xs], Index, Result).
 
 get_member([],_,_):- fail.
