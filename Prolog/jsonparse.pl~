@@ -28,6 +28,14 @@ f_char(Char, [X | Xs], Chars2) :- string_codes(Char, [Y | _]),
     Y = X,
     Chars2 = Xs.
 
+creation_number([X|Xs], [X|Xs],[]):-
+    X<48,
+    !.
+creation_number([X|Xs],[X|Xs],[]):-
+    X>57,!.
+creation_number([X|Xs],Zs,[X|Ys]):-
+    creation_number(Xs,Zs,Ys).
+
 %json object
 %Caso in cui dentro è vuoto
 json_obj(CharsIn, CharsOut, ObjectIn, jsonobj(ObjectOut)) :-
@@ -54,13 +62,36 @@ json_string(CharsIn, CharsOut, Key) :-
     creation_ss(Chars2, Chars3, Result),
     f_char("\"", Chars3, CharsOut),
     string_codes(Key, Result).
+
+number(CharsIn, CharsOut, Object):-
+    f_char("+", CharsIn, Chars2),
+    char_code('+', Plus),
+    creation_number(Chars2, Chars3, Value1),
+    list_not_empty(Value1),
+    append([Plus], Value1, Value1Minus),
+    f_char(".", Chars3, Chars4),!,
+    char_code('.',Dot),
+    append(Value1Minus,[Dot], Value2),
+    creation_number(Chars4,CharsOut,Value3),
+    list_not_empty(Value3),
+    append(Value2, Value3, Value),
+    number_codes(Object,Value).
+number(CharsIn, CharsOut, Object):-
+    f_char("+",CharsIn,Chars2),
+    char_code('+',Plus),
+    creation_number(Chars2, CharsOut, Value2),
+    list_not_empty(Value2),!,
+    append([Plus], Value2, Value),
+    number_codes(Object,Value).
+
+
 %json value
 json_value(CharsIn, CharsOut, Object) :-
     json_string(CharsIn, CharsOut, Object), !.
 json_value(CharsIn, CharsOut, Object) :-
     object_nested(CharsIn, CharsOut, Object), !.
-
-
+json_value(CharsIn, CharsOut, Object):-
+    number(CharsIn, CharsOut, Object),!.
 
 %creazione stringhe inizio
 creation_ss([X | _], _, _) :- string_codes("\"", [Char | _]),
@@ -178,4 +209,43 @@ jsondump(JSON, Filename):- open(Filename, write, Out),
     json_print(JSON, String), write(Out, String),
     close(Out).
 
+json_print(JSON, String):- JSON=json_obj([]), !,
+    String = "{}".
+json_print(JSON, String):- json_obj([Y|Ys]) = JSON, !,
+    concat("", "{", String1), print_object([Y|Ys], "", String2),
+    concat(String1, String2, String3),
+    concat(String3, "}", String).
+json_print(JSON, String):- JSON = json_array([]), !,
+    String = "[]".
+json_print(JSON, String):- json_array([Y|Ys]) = JSON, !,
+    concat("", "[", String1), print_array([Y|Ys], "", String2),
+    concat(String1, String2, String3),
+    concat(String3, "]", String).
+
+print_object([], String, Result):-!,
+    string_concat(Temp,",", String), Result = Temp.
+print_object([(X,Y)|Xs],String, Result):-
+    print_element(X,String1),
+    string_concat(String, String1, String2),
+    string_concat(String2, ":", String3),
+    print_element(Y, String4),
+    string_concat(String3, String4, String5),
+    string_concat(String5, ",", String6),
+    print_object(Xs, String6, Result).
+
+print_array([], String, Result):-!,
+    string_concat(Temp, ",", String), Result = Temp.
+print_array([X|Xs], String, Result):-
+    print_element(X, String1),
+    string_concat(String, String1, String2),
+    string_concat(String2, ",", String3),
+    print_array(Xs, String3, Result).
+
+print_element(X, Result):- number(X), !, Result = X.
+print_element(X, Result):- json_print(X, Result), !.
+print_element(X, Result):- string(X), !,
+    string_concat("","\"", String1),
+    string_concat(String1, X, String2),
+    string_concat(String2,"\"", String3),
+    Result = String3.
 

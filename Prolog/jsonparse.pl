@@ -28,6 +28,14 @@ f_char(Char, [X | Xs], Chars2) :- string_codes(Char, [Y | _]),
     Y = X,
     Chars2 = Xs.
 
+creation_number([X|Xs], [X|Xs],[]):-
+    X<48,
+    !.
+creation_number([X|Xs],[X|Xs],[]):-
+    X>57,!.
+creation_number([X|Xs],Zs,[X|Ys]):-
+    creation_number(Xs,Zs,Ys).
+
 %json object
 %Caso in cui dentro è vuoto
 json_obj(CharsIn, CharsOut, ObjectIn, jsonobj(ObjectOut)) :-
@@ -54,13 +62,73 @@ json_string(CharsIn, CharsOut, Key) :-
     creation_ss(Chars2, Chars3, Result),
     f_char("\"", Chars3, CharsOut),
     string_codes(Key, Result).
+
+%se numero positivo
+number(CharsIn, CharsOut, Object):-
+    f_char("+", CharsIn, Chars2),
+    char_code('+', Plus),
+    creation_number(Chars2, Chars3, Value1),
+    list_not_empty(Value1),
+    append([Plus], Value1, Value1Minus),
+    f_char(".", Chars3, Chars4),!,
+    char_code('.',Dot),
+    append(Value1Minus,[Dot], Value2),
+    creation_number(Chars4,CharsOut,Value3),
+    list_not_empty(Value3),
+    append(Value2, Value3, Value),
+    number_codes(Object,Value).
+number(CharsIn, CharsOut, Object):-
+    f_char("+",CharsIn,Chars2),
+    char_code('+',Plus),
+    creation_number(Chars2, CharsOut, Value2),
+    list_not_empty(Value2),!,
+    append([Plus], Value2, Value),
+    number_codes(Object,Value).
+
+%se numero negativo
+number(CharsIn,CharsOut,Object):-
+    f_char("-",CharsIn, Chars2),
+    char_code('-',Minus),
+    creation_number(Chars2, Chars3, Value1),
+    list_not_empty(Value1),
+    append([Minus], Value1, Value1Minus),
+    f_char(".", Chars3, Chars4),!,
+    char_code(".",Dot),
+    append(Value1Minus,[Dot],Value2),
+    creation_number(Chars4, CharsOut, Value3),
+    list_not_empty(Value3),
+    append(Value2, Value3, Value),
+    number_codes(Object,Value).
+number(CharsIn, CharsOut, Object):-
+    f_char("-",CharsIn, Chars2),
+    char_code('-', Minus),
+    creation_number(Chars2, CharsOut, Value2),
+    list_not_empty(Value2),!,
+    append([Minus], Value2, Value),
+    number_codes(Object, Value).
+
+%se il numero è float
+number(CharsIn, CharsOut, Object):-
+    creation_number(CharsIn, Chars1, Value1),
+    f_char(".",Chars1, Chars2),
+    char_code('.',Dot),
+    append(Value1, [Dot], Value1Dot),!,
+    creation_number(Chars2, CharsOut, Value2),
+    append(Value1Dot, Value2, Value),
+    list_not_empty(Value),
+    number_codes(Object, Value).
+number(CharsIn, CharsOut, Object):-
+    creation_number(CharsIn, CharsOut, Value),
+    list_not_empty(Value),
+    number_codes(Object,Value).
+
 %json value
 json_value(CharsIn, CharsOut, Object) :-
     json_string(CharsIn, CharsOut, Object), !.
 json_value(CharsIn, CharsOut, Object) :-
     object_nested(CharsIn, CharsOut, Object), !.
-
-
+json_value(CharsIn, CharsOut, Object):-
+    number(CharsIn, CharsOut, Object),!.
 
 %creazione stringhe inizio
 creation_ss([X | _], _, _) :- string_codes("\"", [Char | _]),
