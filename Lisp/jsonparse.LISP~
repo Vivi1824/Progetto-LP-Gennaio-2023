@@ -1,3 +1,14 @@
+(defun json-parse(json)
+  (let((json-list
+        (remove-ws(coerce json 'list))))
+    (cond
+     ((equal(first json-list)'#\{)
+      (parse-object(cdr json-list)))
+     ((equal(first json-list)'#[)
+      (parse-array(cdr json-list)))
+     (T(error "syntax-error-parse")))))
+
+
 ;rimuove spazi bianchi
 (defun remove-ws (list)
   (if(or(equal(car list) '#\Space)
@@ -129,3 +140,88 @@
 (defun parse-members(json obj)
   (let((result(parse-pair json)))
     (delimiter-object result obj)))
+
+(defun parse-object(json)
+  (let((njson(remove-ws json)))
+    (cond
+     ((and
+       (equal(car njson)'#\))
+       (null(remove-ws(cdr njson))))
+      '(json-obj))
+     (T(let((result(parse-members njson NIL)))
+         (if(null(remove-ws(car(cdr result))))
+             (append '(json-obj)(car result))
+           (error "syntax-error-not-empty")))))))
+
+(defun delimiter-array(json obj)
+  (let((nobj(append obj(list(car json))))
+       (njson(remove-ws(car(cdr json)))))
+    (cond
+     ((char=(car njson)'#\])
+      (append(list nobj)(list(remove-first njson))))
+     ((char=(car njson)'#\,)
+      (parse-elements(remove-first njson)nobj))
+     (T(error "syntax-error-delim-array")))))
+
+(defun delimiter-object (json obj)
+  (let((nobj(append obj(list(car json))))
+       (njson(remove-ws(car(cdr json)))))
+    (cond
+     ((char=(car njson)'#\})
+      (append(list nobj)(list(remove-first njson))))
+     ((char=(car njson)'#\,)
+      (parse-members(remove-first njson)nobj))
+     (T(error "syntax-error-delim-obj")))))
+
+(defun parse-elements(json obj)
+  (let((result (parse-value json)))
+    (delimiter-array result obj)))
+
+(defun parse-array(json)
+  (let((njson(funcall 'remove-ws json)))
+    (cond
+     ((and
+       (equal(car njson) '#\])
+       (null(remove-ws(cdr njson))))
+      '(json-array))
+     (T(let((result(parse-elements njson NIL)))
+         (if(null(remove-ws(car(cdr result))))
+             (append '(json-array)(car result))
+           (error "syntax-error-not-empty")))))))
+
+(defun parse-array-nested(json)
+  (let((njson(remove-ws json)))
+    (cond
+     ((equal(car njson)'#\])
+      (append
+       (list '(json-array))
+       (list (cdr njson))))
+     (T(let((result(parse-elements njson NIL)))
+         (append
+          (list(append'(json-array)(car result)))
+          (list(car(cdr result)))))))))
+
+
+(defun parse-nested(json)
+  (cond
+   ((equal(first json)'#\{)
+    (let((result(parse-object-nested(cdr json))))
+      result))
+   ((equal(first json)'#\[)
+    (let((result(parse-array-nested(cdr json))))
+      result))))
+
+;Lettura e scrittura 
+(defun remove-last-comma(JSON)
+  (cond
+   ((string="" JSON)JSON)
+   (T(subseq JSON 0(-(length JSON)1)))))
+
+
+(defun print-array(JSON)
+  (cond
+   ((NULL JSON)"")
+   (T(concatenate 'string
+     (print-value(car JSON))
+     ","
+     (print-array(cdr JSON))))))

@@ -218,6 +218,25 @@
    (T(subseq JSON 0(-(length JSON)1)))))
 
 
+(defun print-value(value)
+  (cond
+   ((numberp value)
+    (write-to-string value))
+   ((stringp value)
+    (concatenate 'string "\""value"\""))
+   (T(to-string value))))
+
+(defun print-pair(JSON)
+  (concatenate 'string "\""
+               (car JSON)
+               "\"" ":"
+               (print-value(car(cdr JSON)))
+               ","
+               ))
+
+
+
+
 (defun print-array(JSON)
   (cond
    ((NULL JSON)"")
@@ -225,3 +244,95 @@
      (print-value(car JSON))
      ","
      (print-array(cdr JSON))))))
+
+
+(defun print-obj(JSON)
+  (cond
+   ((NULL JSON)"")
+   ((listp(car JSON))
+    (concatenate 'string
+                 (print-pair(car JSON))
+                 (print-obj(cdr JSON))))))
+
+
+(defun search-by-key(json key)
+  (cond
+   ((NULL json)(error "key-not-found"))
+   ((equal(car(car json))key)(car(cdr(car json))))
+   (T(search-by-key(cdr json)key))))
+
+
+(defun search-by-index(json index)
+  (cond
+   ((NULL json)(error "index-not-found"))
+   ((eq index 0)(car json))
+   (T(search-by-index(cdr json)(1-index)))))
+
+
+(defun json-get-2 (json fields)
+  (cond
+   ((and(eq(list-length fields)1)
+        (listp json)
+        (stringp(car fields))
+        (eq(car JSON) 'json-obj))
+    (search-by-key(cdr json)(car fields)))
+   ((and(eq(list-length fields)1)
+        (listp json)
+        (numberp(car fields))
+        (>=(car fields)0)
+        (eq(car JSON)'json-array))
+    (search-by-index(cdr json)(car fields)))
+   ((and(>(list-length fields)1)
+        (listp json)
+        (stringp(car fields))
+        (eq(car JSON)'json-obj))
+    (json-get-2
+     (search-by-key(cdr json)(car fields))
+     (cdr fields)))
+   ((and(>(list-length fields)1)
+        (listp json)
+        (numberp(car fields))
+        (>=(car fields)0)
+        (eq(car JSON)'json-array))
+    (json-get-2
+     (search-by-index(cdr json)(car fields))
+     (cdr fields)))
+   (T(error "Syntax-error"))))
+
+
+(defun json-get (json&rest fields)
+  (if(null fields)
+      json
+    (json-get-2 json fields)))
+
+
+(defun jsonread(filename)
+  (with-open-file(stream filename
+                         :direction :input
+                         :if-does-not-exist :error)
+    (let((contents(make-string(file-length stream))))
+      (let((position(read-sequence contents stream)))
+        (json-parse(subseq contents 0 positions))))))
+
+(defun to-string (JSON)
+  (cond
+   ((eq(car JSON)'json-obj)
+    (concatenate 'string
+                 "{"
+                 (remove-last-comma
+                  (print-obj(cdr JSON)))
+                 "}"))
+   ((eq(car JSON)'json-array)
+    (concatenate 'string
+                 "["
+                 (remove-last-comma
+                  (print-array(cdr JSON)))
+                 "]"))
+   (T(error "Syntax-error"))))
+
+(defun jsondump(JSON filename)
+  (with-open-file(stream filename
+                         :direction :output
+                         :if-exists :supersede
+                         :if-does-not-exist :create)
+    (format stream (to-string JSON))filename))
