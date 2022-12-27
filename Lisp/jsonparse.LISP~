@@ -1,12 +1,18 @@
-(defun json-parse(json)
+(defun jsonparse(json)
   (let((json-list
-        (remove-ws(coerce json 'list))))
+        (funcall 'remove-ws(coerce json 'list))))
     (cond
      ((equal(first json-list)'#\{)
-      (parse-object(cdr json-list)))
+      (funcall 'parse-object(cdr json-list)))
      ((equal(first json-list)'#[)
-      (parse-array(cdr json-list)))
+      (funcall 'parse-array(cdr json-list)))
      (T(error "syntax-error-parse")))))
+
+
+(defun jsonaccess (json&rest fields)
+  (if(null fields)
+      json
+    (jsonaccess-2 json fields)))
 
 
 ;rimuove spazi bianchi
@@ -28,17 +34,18 @@
 
 (defun creation-ss(json temp)
   (cond
-   ((null json)(error "quotes not closed"))
-   ((equal (car json) '#\") (error "ds inside sequence"))
+   ((null json)(error "quotes-not-closed"))
+   ((equal (car json) '#\") (error "ds-inside-sequence"))
    ((not (equal(car json)'#\'))
     (creation-ss(cdr json)(append(temp(list(car json)))))
-   (T(append (list (coerce temp 'string))
-             (remove-ws(list(cdr json))))))))
+   (T(append
+      (list(coerce temp 'string))
+      (remove-ws(list(cdr json))))))))
 
 (defun creation-ds(json temp)
   (cond
-   ((null json)(error "quotes not closed"))
-   ((equal(car json)'#\')(error "ss inside ds"))
+   ((null json)(error "quotes-not-closed"))
+   ((equal(car json)'#\')(error "ss-inside-ds"))
    ((not(equal(car json) '#\"))
     (creation-ds(cdr json)(append temp (list (car json)))))
    (T(append(list(coerce temp 'string))
@@ -82,7 +89,7 @@
       (list(parse-float(coerce temp 'string)))
       (remove-ws(list json))))))
 
-(defun parse-obj-nested(json)
+(defun parse-object-nested(json)
   (let((njson(remove-ws json)))
     (cond
      ((equal(car njson)'#\})
@@ -91,7 +98,7 @@
        (list(cdr njson))))
      (T(let((result(parse-members njson NIL)))
          (append
-          (list(append'(json-obj)(car result)))
+          (list(append '(json-obj)(car result)))
           (list(car(cdr result)))))))))
 
 
@@ -106,8 +113,6 @@
       (parse-number njson NIL))
      ((char='#\- (car njson))
       (parse-number(cdr njson) '(#\-)))
-     ((char='#\+ (car njson))
-      (parse-number (cdr njson) '(#\+)))
      ((or
        (equal(car njson) '#\{)
        (equal(car njson) '#\[))
@@ -145,7 +150,7 @@
   (let((njson(remove-ws json)))
     (cond
      ((and
-       (equal(car njson)'#\))
+       (equal(car njson)'#\})
        (null(remove-ws(cdr njson))))
       '(json-obj))
      (T(let((result(parse-members njson NIL)))
@@ -198,7 +203,7 @@
        (list (cdr njson))))
      (T(let((result(parse-elements njson NIL)))
          (append
-          (list(append'(json-array)(car result)))
+          (list(append '(json-array)(car result)))
           (list(car(cdr result)))))))))
 
 
@@ -218,6 +223,25 @@
    (T(subseq JSON 0(-(length JSON)1)))))
 
 
+(defun print-value(value)
+  (cond
+   ((numberp value)
+    (write-to-string value))
+   ((stringp value)
+    (concatenate 'string "\""value"\""))
+   (T(to-string value))))
+
+(defun print-pair(JSON)
+  (concatenate 'string "\""
+               (car JSON)
+               "\"" ":"
+               (print-value(car(cdr JSON)))
+               ","
+               ))
+
+
+
+
 (defun print-array(JSON)
   (cond
    ((NULL JSON)"")
@@ -225,3 +249,92 @@
      (print-value(car JSON))
      ","
      (print-array(cdr JSON))))))
+
+
+(defun print-obj(JSON)
+  (cond
+   ((NULL JSON)"")
+   ((listp(car JSON))
+    (concatenate 'string
+                 (print-pair(car JSON))
+                 (print-obj(cdr JSON))))))
+
+
+(defun search-by-key(json key)
+  (cond
+   ((NULL json)(error "key-not-found"))
+   ((equal(car(car json))key)(car(cdr(car json))))
+   (T(search-by-key(cdr json)key))))
+
+
+(defun search-by-index(json index)
+  (cond
+   ((NULL json)(error "index-not-found"))
+   ((eq index 0)(car json))
+   (T(search-by-index(cdr json)(1-index)))))
+
+
+(defun jsonaccess-2 (json fields)
+  (cond
+   ((and(eq(list-length fields)1)
+        (listp json)
+        (stringp(car fields))
+        (eq(car JSON) 'json-obj))
+    (search-by-key(cdr json)(car fields)))
+   ((and(eq(list-length fields)1)
+        (listp json)
+        (numberp(car fields))
+        (>=(car fields)0)
+        (eq(car JSON)'json-array))
+    (search-by-index(cdr json)(car fields)))
+   ((and(>(list-length fields)1)
+        (listp json)
+        (stringp(car fields))
+        (eq(car JSON)'json-obj))
+    (jsonaccess-2
+     (search-by-key(cdr json)(car fields))
+     (cdr fields)))
+   ((and(>(list-length fields)1)
+        (listp json)
+        (numberp(car fields))
+        (>=(car fields)0)
+        (eq(car JSON)'json-array))
+    (jsonaccess-2
+     (search-by-index(cdr json)(car fields))
+     (cdr fields)))
+   (T(error "Syntax-error"))))
+
+
+
+
+
+(defun jsonread(filename)
+  (with-open-file(stream filename
+                         :direction :input
+                         :if-does-not-exist :error)
+    (let((contents(make-string(file-length stream))))
+      (let((position(read-sequence contents stream)))
+        (jsonparse(subseq contents 0 positions))))))
+
+(defun to-string (JSON)
+  (cond
+   ((eq(car JSON)'json-obj)
+    (concatenate 'string
+                 "{"
+                 (remove-last-comma
+                  (print-obj(cdr JSON)))
+                 "}"))
+   ((eq(car JSON)'json-array)
+    (concatenate 'string
+                 "["
+                 (remove-last-comma
+                  (print-array(cdr JSON)))
+                 "]"))
+   (T(error "Syntax-error"))))
+
+(defun jsondump(JSON filename)
+  (with-open-file(stream filename
+                         :direction :output
+                         :if-exists :supersede
+                         :if-does-not-exist :create)
+    (format stream (to-string JSON))filename))
