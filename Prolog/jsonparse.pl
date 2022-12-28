@@ -1,11 +1,11 @@
-json_parse(String, Object):-
+jsonparse(String, Object):-
     string_codes(String, Chars),
     remove_ws(Chars, Chars1),
     json_obj(Chars1, Chars2, [], Object),
     remove_ws(Chars2, Chars3),
     list_is_empty(Chars3), !.
 
-json_parse(String, Object):-
+jsonparse(String, Object):-
     string_codes(String, Chars),
     remove_ws(Chars,Chars1),
     json_array(Chars1, Chars2, [], Object),
@@ -135,7 +135,7 @@ creation_ss([X | _], _, _) :- string_codes("\"", [Char | _]),
     X = Char, !, fail.
 creation_ss([X | Xs], [X | Xs], []) :- string_codes("\'", [Char | _]),
     X = Char, !.
-screation_ss([X | Xs], Zs, [X | Ys]) :- creation_ss(Xs, Zs, Ys).
+creation_ss([X | Xs], Zs, [X | Ys]) :- creation_ss(Xs, Zs, Ys).
 %creazione stringhe fine
 creation_ds([X | _], _, _) :- string_codes("\'", [Char | _]),
     X = Char, !, fail.
@@ -210,10 +210,10 @@ json_get(X,void,X):-!.
 json_get(json_obj(),_,_):-!, fail.
 json_get(json_array(),_,_):-!, fail.
 %Altrimenti
-json_get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
-json_get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
+json_get(Obj, [X], Result):- jsonaccess(Obj, X, Result), !.
+json_get(Obj, [X|Xs], Result):- jsonaccess(Obj, X, Temp), !,
     json_get(Temp, Xs, Result).
-json_get(Obj, X, Result):- get_elements(Obj, X, Result), !.
+json_get(Obj, X, Result):- jsonaccess(Obj, X, Result), !.
 
 
 % jsonaccess risulta vero quando Result è recuperabile
@@ -243,7 +243,7 @@ get_member_pos([_|Xs], Y, Result):- number(Y), Z is Y-1,
 %Lettura e Scrittura su file
 jsonread(Filename, JSON):- open(Filename, read, In),
     read_stream_to_codes(In, X), close(In),
-    atom_codes(String, X),json_parse(String, JSON).
+    atom_codes(String, X),jsonparse(String, JSON).
 
 jsondump(JSON, Filename):- open(Filename, write, Out),
     json_print(JSON, String), write(Out, String),
