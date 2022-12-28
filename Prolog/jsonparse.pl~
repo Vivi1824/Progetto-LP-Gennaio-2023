@@ -60,7 +60,7 @@ json_string(CharsIn, CharsOut, Key) :-
 json_string(CharsIn, CharsOut, Key) :-
     f_char("\"", CharsIn, Chars2), !,
     creation_ss(Chars2, Chars3, Result),
-    f_char("\"", Chars3, CharsOut),
+    f_char('\"', Chars3, CharsOut),
     string_codes(Key, Result).
 
 %se numero positivo
@@ -93,7 +93,7 @@ number(CharsIn,CharsOut,Object):-
     list_not_empty(Value1),
     append([Minus], Value1, Value1Minus),
     f_char(".", Chars3, Chars4),!,
-    char_code(".",Dot),
+    char_code('.',Dot),
     append(Value1Minus,[Dot],Value2),
     creation_number(Chars4, CharsOut, Value3),
     list_not_empty(Value3),
@@ -210,10 +210,10 @@ json_get(X,void,X):-!.
 json_get(json_obj(),_,_):-!, fail.
 json_get(json_array(),_,_):-!, fail.
 %Altrimenti
-json_get(Obj, [X], Result):- get_elements(Obj, X, Result), !.
-json_get(Obj, [X|Xs], Result):- get_elements(Obj, X, Temp), !,
+json_get(Obj, [X], Result):- jsonaccess(Obj, X, Result), !.
+json_get(Obj, [X|Xs], Result):- jsonaccess(Obj, X, Temp), !,
     json_get(Temp, Xs, Result).
-json_get(Obj, X, Result):- get_elements(Obj, X, Result), !.
+json_get(Obj, X, Result):- jsonaccess(Obj, X, Result), !.
 
 
 % jsonaccess risulta vero quando Result è recuperabile
