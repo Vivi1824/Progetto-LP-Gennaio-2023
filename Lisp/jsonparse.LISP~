@@ -1,3 +1,15 @@
+;;Progetto Linguaggi di Programmazione 
+;;15 Gennaio 2023
+;;Viviana Giuliani 875068
+;;Daniel Marco Gatti 869310
+
+;;jsonparse(json) è una funzione che accetta in ingresso una 
+;;stringa seguendo la ricorsione per produrre una lista Lisp
+;;del json in questione.
+;;L'idea è quella di consumare un carattere dopo l'altro,
+;;partendo da sinistra verso destra finchè o non viene trovato
+;;un erorre o viene risultata una stringa corretta.
+
 (defun jsonparse (json)
    (let ((json-list 
           (funcall 'remove-ws (coerce json 'list))))
@@ -9,7 +21,6 @@
      (T (error "syntax-error-parse"))
     )))
 
-;;; jsonparse-array (json)
 (defun parse-array (json)
 (let ((njson (funcall 'remove-ws json)))
   (cond
@@ -22,8 +33,6 @@
             (append '(jsonarray) (car result))
           (error "syntax-error-not-empty")))))))
        
-
-;;; parse-object (json)
 (defun parse-object (json)
 (let ((njson (remove-ws json)))
   (cond
@@ -36,25 +45,20 @@
             (append '(jsonobj) (car result))
           (error "syntax-error-not-empty")))))))
 
-
-;;;parse-elements (json obj)
 (defun parse-elements (json obj)
   (let ((result (parse-value json))) 
     (delimiter-array result obj)))
 
-;;;parse-members (json obj)
 (defun parse-members (json obj)
   (let ((result (parse-pair json)))
   (delimiter-object result obj)))
 
-;;;parse-pair (json obj)
 (defun parse-pair (json)
   (let((njson (remove-ws json)))
     (if (or (equal (car njson) '#\") (equal (car njson) '#\'))
         (let ((result (parse-string njson)))
           (delimiter-comma result))
       (error "syntax-error"))))
-
 
 (defun delimiter-comma (json)
     (let((njson (remove-ws (car (cdr json))))
@@ -70,7 +74,6 @@
             (list (car (cdr result)))))
       (error "syntax-error-comma"))))
 
-;;;parse-value (json)
 (defun parse-value (json)
   (let ((njson (remove-ws json)))
     (cond
@@ -87,7 +90,6 @@
        (equal (car njson) '#\[)) 
       (parse-nested njson))
      (T (error "syntax-error")))))
-
 
 (defun parse-number (json temp)
   (cond
@@ -106,7 +108,6 @@
        (remove-ws (list json))))
 ))
 
-
 (defun parse-number-float (json temp)
   (cond
    ((or 
@@ -124,7 +125,6 @@
        (remove-ws (list json))))
 ))
 
-;;;parse-string (json)
 (defun parse-string (json)
   (cond 
    ((char= '#\' (car json)) 
@@ -132,7 +132,6 @@
    ((char= '#\" (car json)) 
     (parse-string-dq (cdr json) NIL))))
 
-;;;parse-string-sq (json temp)
 (defun parse-string-sq (json temp)
   (cond
    ((null json) (error "quotes-not-closed"))
@@ -145,7 +144,6 @@
         (list (coerce temp 'string))
         (remove-ws (list (cdr json)))))
 ))
-
 
 (defun parse-string-dq (json temp)
   (cond
@@ -160,7 +158,6 @@
         (remove-ws (list (cdr json)))))
 ))
    
-
 (defun parse-nested (json)
   (cond
    ((equal (first json) '#\{) 
@@ -170,7 +167,6 @@
     (let ((result (parse-array-nested (cdr json))))
       result))
     ))
-
 
 (defun parse-array-nested (json)
   (let ((njson (remove-ws  json)))
@@ -184,7 +180,6 @@
          (list (append '(jsonarray) (car result))) 
          (list (car (cdr result)))))))))
 
-;;;parse-object-nested (json)
 (defun parse-object-nested (json)
   (let ((njson (remove-ws json)))
    (cond
@@ -197,7 +192,6 @@
          (list (append '(jsonobj) (car result))) 
          (list (car (cdr result)))))))))
 
-;;;json-delimiter-array (json obj)
 (defun delimiter-array (json obj)
   (let ((nobj (append obj (list (car json))))
         (njson (remove-ws (car (cdr json)))))
@@ -207,7 +201,6 @@
      ((char= (car njson) '#\,) 
       (parse-elements (remove-first njson) nobj))  
      (T (error "syntax-error-delim-array")))))
-
 
 (defun delimiter-object (json obj)
   (let ((nobj (append obj (list (car json))))
@@ -219,16 +212,14 @@
       (parse-members (remove-first njson) nobj))  
      (T (error "syntax-error-delim-obj")))))
 
-;;;remove-first (list)
 (defun remove-first (list)
   (cdr list))
-;;;remove-last (list)
+
 (defun remove-last (list)
   (if (null (cdr list))
       NIL
     (cons (car list) (remove-last (cdr list)))))
 
-;;;remove-ws (list)
 (defun remove-ws (list)
   (if (or (equal (car list) '#\Space)
           (equal (car list) '#\Newline)
@@ -236,13 +227,10 @@
       (remove-ws (cdr list))
     list))
 
-;;; json_get(json, &rest fields)
-;;; -Follows a chain of keys (iff JSON_obj at current level 
-;;;  is an object) or indexes (iff JSON_obj at current level 
-;;;  is an array) in order to retrieve a certain value.
-;;; -The main idea is to simply go through the list as needed.
-;;; -Two different predicates are used since the keyword 
-;;;  &rest had a few issues with recursive calls.
+;;jsonaccess(json &rest fields)
+;;Seguendo le chiavi di riconoscimento (tra un oggetto
+;;json e un array) accetta un oggetto json e una serie
+;;di "campi", recuperando l'oggetto corrispondente.
 
 (defun jsonaccess (json &rest fields)
   (jsonaccess-2 json fields))
@@ -279,7 +267,6 @@
      ))
    (T (error "Syntax-error"))))
 
-
 (defun search-by-key (json key)
   (cond
    ((NULL json) (error "Key-not-found"))
@@ -287,14 +274,12 @@
    (T (search-by-key (cdr json) key))
    ))
 
-
 (defun search-by-index (json index)
   (cond
    ((NULL json) (error "Index-not-found"))
    ((eq index 0) (car json))
    (T (search-by-index (cdr json) (1- index)))
    ))
-
 
 (defun jsonread (filename)
   (with-open-file (stream filename 
@@ -305,13 +290,14 @@
          (jsonparse (subseq contents 0 position))))))
 
 (defun jsondump (JSON filename)
-  (with-open-file (stream filename 
+  (cond((null filename) (error "Filename is NIL"))
+       (T (with-open-file 
+              (stream filename 
                           :direction :output 
                           :if-exists :supersede
                           :if-does-not-exist :create)
-  (format stream (to-string JSON))))
+            (format stream (to-string JSON))))))
 
-;;; json-to-string (json)
 (defun to-string (JSON)
   (cond
    ((eq (car JSON) 'jsonobj) 
@@ -330,7 +316,6 @@
                  ))
    (T (error "Syntax-error"))))
 
-;;; json-print-obj (json)
 (defun print-obj (JSON)
   (cond
    ((NULL JSON) "")
@@ -340,7 +325,6 @@
                  (print-obj (cdr JSON))
                  ))))
 
-;;; json-print-pair (json)
 (defun print-pair (JSON)
   (concatenate 'string "\""
                (car JSON)
@@ -349,7 +333,6 @@
                ","
                ))
 
-;;; json-print-value (json)
 (defun print-value (JSON)
   (cond
    ((numberp JSON) 
@@ -358,7 +341,6 @@
     (concatenate 'string "\"" JSON "\""))
    (T (to-string JSON))))
 
-;;; json-print-array (json)
 (defun print-array (JSON)
   (cond
    ((NULL JSON) "")
@@ -368,7 +350,6 @@
       (print-array (cdr JSON))
     ))))
 
-;;; remove-last-comma (json)
 (defun remove-last-comma (JSON)
   (cond
     ((string= "" JSON) JSON)

@@ -39,7 +39,7 @@
    ((and 
      (equal (car njson) '#\})
      (null (remove-ws (cdr njson)))) 
-    '(json-obj))
+    '(jsonobj))
    (T (let ((result (parse-members njson NIL)))
         (if (null (remove-ws (car (cdr result))))
             (append '(jsonobj) (car result))
@@ -290,11 +290,13 @@
          (jsonparse (subseq contents 0 position))))))
 
 (defun jsondump (JSON filename)
-  (with-open-file (stream filename 
+  (cond((null filename) (error "Filename is NIL"))
+       (T (with-open-file 
+              (stream filename 
                           :direction :output 
                           :if-exists :supersede
                           :if-does-not-exist :create)
-  (format stream (to-string JSON))))
+            (format stream (to-string JSON))))))
 
 (defun to-string (JSON)
   (cond
@@ -334,7 +336,7 @@
 (defun print-value (JSON)
   (cond
    ((numberp JSON) 
-    (to-string JSON))
+    (write-to-string JSON))
    ((stringp JSON) 
     (concatenate 'string "\"" JSON "\""))
    (T (to-string JSON))))
