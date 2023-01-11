@@ -3,12 +3,12 @@
 ;;Viviana Giuliani 875068
 ;;Daniel Marco Gatti 869310
 
-;;jsonparse(json) Ã¨ una funzione che accetta in ingresso una 
+;;jsonparse(json) è una funzione che accetta in ingresso una 
 ;;stringa seguendo la ricorsione per produrre una lista Lisp
 ;;del json in questione.
-;;L'idea Ã¨ quella di consumare un carattere dopo l'altro,
-;;partendo da sinistra verso destra finchÃ¨ o non viene trovato
-;;un erorre o viene risultata una stringa corretta.
+;;L'idea è quella di consumare un carattere dopo l'altro,
+;;partendo da sinistra verso destra finchè o non viene trovato
+;;un errore o viene risultata una stringa corretta.
                                                                     
 (defun jsonparse (json)
    (let ((json-list 
