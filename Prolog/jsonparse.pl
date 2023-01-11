@@ -1,55 +1,59 @@
-%Progetto Linguaggi di Programmazione
-%15 Gennaio 2023
-%Viviana Giuliani 875068
-%Daniel Marco Gatti 869310
+%%%% -*- Mode: Prolog -*-
+
+% Progetto Linguaggi di Programmazione
+% 15 Gennaio 2023
+% Viviana Giuliani 875068
+% Daniel Marco Gatti 869310
+
 jsonparse(JString, Object) :-
     string_codes(JString, Chars),
     remove_ws(Chars, Chars1),
     json_object(Chars1, Chars2, [], Object),
-   remove_ws(Chars2, Chars3),
+    remove_ws(Chars2, Chars3),
     list_is_empty(Chars3),
     !.
 
 jsonparse(JString, Object) :-
     string_codes(JString, Chars),
-   remove_ws(Chars, Chars1),
+    remove_ws(Chars, Chars1),
     jsonarray(Chars1, Chars2, [], Object),
-   remove_ws(Chars2, Chars3),
+    remove_ws(Chars2, Chars3),
     list_is_empty(Chars3),
     !.
 
 json_object(CharsIn, CharsOut, ObjectIn, jsonobj(ObjectOut)) :-
     first_char("{", CharsIn, Chars1),
-   remove_ws(Chars1, Chars2),
+    remove_ws(Chars1, Chars2),
     first_char("}", Chars2, CharsOut),
     !,
     ObjectIn = ObjectOut.
 json_object(CharsIn, CharsOut, ObjectIn, jsonobj(ObjectOut)) :-
     first_char("{", CharsIn, Chars1),
     !,
-   remove_ws(Chars1, Chars2),
+    remove_ws(Chars1, Chars2),
     members(Chars2, Chars3, ObjectIn, ObjectOut),
-   remove_ws(Chars3, Chars4),
+    remove_ws(Chars3, Chars4),
     first_char("}", Chars4, CharsOut).
 
 jsonarray(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)) :-
     first_char("[", CharsIn, Chars1),
-   remove_ws(Chars1, Chars2),
+    remove_ws(Chars1, Chars2),
     first_char("]", Chars2, CharsOut),
     !,
     ObjectIn = ObjectOut.
 jsonarray(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)) :-
     first_char("[", CharsIn, Chars1),
     !,
-   remove_ws(Chars1, Chars2),
+    remove_ws(Chars1, Chars2),
     elements(Chars2, Chars3, ObjectIn, ObjectOut),
-   remove_ws(Chars3, Chars4),
+    remove_ws(Chars3, Chars4),
     first_char("]", Chars4, CharsOut).
+	
 members(CharsIn, CharsOut, ObjectIn, ObjectOut1) :-
     pairing(CharsIn, Chars2, ObjectIn, ObjectOut),
-   remove_ws(Chars2, Chars3),
+    remove_ws(Chars2, Chars3),
     first_char(",", Chars3, Chars4),
-   remove_ws(Chars4, Chars5),
+    remove_ws(Chars4, Chars5),
     members(Chars5, CharsOut, ObjectOut, ObjectOut1),
     !.
 members(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
@@ -58,9 +62,9 @@ members(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
 
 elements(CharsIn, CharsOut, ObjectIn, ObjectOut2) :-
     value(CharsIn, Chars2, ObjectOut),
-   remove_ws(Chars2, Chars3),
+    remove_ws(Chars2, Chars3),
     first_char(",", Chars3, Chars4),
-   remove_ws(Chars4, Chars5),
+    remove_ws(Chars4, Chars5),
     !,
     append(ObjectIn, [ObjectOut], ObjectOut1),
     elements(Chars5, CharsOut, ObjectOut1, ObjectOut2).
@@ -69,15 +73,13 @@ elements(CharsIn, CharsOut, ObjectIn, ObjectOut1) :-
     append(ObjectIn, [ObjectOut], ObjectOut1),
     !.
 
-
 pairing(CharsIn, CharsOut, ObjectIn, ObjectOut) :-
     json_string(CharsIn, Chars2, Key),
-   remove_ws(Chars2, Chars3),
+    remove_ws(Chars2, Chars3),
     first_char(":", Chars3, Chars4),
-   remove_ws(Chars4, Chars5),
+    remove_ws(Chars4, Chars5),
     value(Chars5, CharsOut, Value),
     append(ObjectIn, [(Key,Value)], ObjectOut).
-
 
 json_string(CharsIn, CharsOut, Key) :-
     first_char("\'", CharsIn, Chars2),
@@ -146,7 +148,6 @@ list_is_not_empty(List) :- List \= [], !.
 
 list_is_empty(List) :- List = [], !.
 
-
 jmix(CharsIn, CharsOut, Object) :-
     json_object(CharsIn, CharsOut, [], Object),
     !.
@@ -179,6 +180,7 @@ creation_ss([X | Xs], [X | Xs], []) :-
     !.
 creation_ss([X | Xs], Zs, [X | Ys]) :-
     creation_ss(Xs, Zs, Ys).
+	
 creation_sq([X | _], _, _) :-
     string_codes("\'", [Char | _]),
     X = Char,
@@ -195,7 +197,7 @@ remove_ws([],[]) :- !.
 remove_ws([X | Xs], Ys) :-
     is_whitespace_or_newline(X),
     !,
-   remove_ws(Xs, Ys).
+    remove_ws(Xs, Ys).
 remove_ws([X | Xs], Ys) :-
     Ys = [X | Xs],
     !.
@@ -222,8 +224,8 @@ is_tab_custom(X) :-
     char_code('\t', Y),
     X = Y,
     !.
-jsonaccess(_, [], _) :- !, fail.
 
+jsonaccess(_, [], _) :- !, fail.
 jsonaccess(jsonobj(), _, _) :- !, fail.
 jsonaccess(jsonarray(), _, _) :- !, fail.
 
@@ -237,18 +239,15 @@ jsonaccess(JSON_obj, [X|Xs], Result) :-
 jsonaccess(JSON_obj, X, Result) :-
     jsonaccess_elements(JSON_obj, X, Result),
     !.
-
+	
 jsonaccess_elements(JSON_obj, Fields, Result) :-
     jsonobj([Y|Ys]) = JSON_obj,
     !,
     jsonaccess_member([Y|Ys], Fields, Result).
-
-
 jsonaccess_elements(JSON_obj, Index , Result) :-
     jsonarray([X|Xs]) = JSON_obj,
     !,
     jsonaccess_member_position([X | Xs], Index, Result).
-
 
 jsonaccess_member([], _, _) :- fail.
 jsonaccess_member([(X,Y)| _], Z, Result) :-
@@ -270,7 +269,6 @@ jsonaccess_member_position([_ | Xs], Y, Result) :-
     number(Y),
     Z is Y-1,
     jsonaccess_member_position(Xs, Z, Result).
-
 
 jsonread(Filename, JSON) :-
     open(Filename, read, In),
