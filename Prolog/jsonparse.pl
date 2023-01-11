@@ -2,7 +2,6 @@
 %15 Gennaio 2023
 %Viviana Giuliani 875068
 %Daniel Marco Gatti 869310
-
 jsonparse(JString, Object) :-
     string_codes(JString, Chars),
     remove_ws(Chars, Chars1),
@@ -46,7 +45,6 @@ jsonarray(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)) :-
     elements(Chars2, Chars3, ObjectIn, ObjectOut),
    remove_ws(Chars3, Chars4),
     first_char("]", Chars4, CharsOut).
-
 members(CharsIn, CharsOut, ObjectIn, ObjectOut1) :-
     pairing(CharsIn, Chars2, ObjectIn, ObjectOut),
    remove_ws(Chars2, Chars3),
@@ -93,7 +91,6 @@ json_string(CharsIn, CharsOut, Key) :-
     creation_sq(Chars2, Chars3, Result),
     first_char('\"', Chars3, CharsOut),
     string_codes(Key, Result).
-
 
 value(CharsIn, CharsOut, Object) :-
     json_string(CharsIn, CharsOut, Object),
@@ -145,7 +142,6 @@ number(CharsIn, CharsOut, Object) :-
     list_is_not_empty(Value),
     number_codes(Object, Value).
 
-
 list_is_not_empty(List) :- List \= [], !.
 
 list_is_empty(List) :- List = [], !.
@@ -183,7 +179,6 @@ creation_ss([X | Xs], [X | Xs], []) :-
     !.
 creation_ss([X | Xs], Zs, [X | Ys]) :-
     creation_ss(Xs, Zs, Ys).
-
 creation_sq([X | _], _, _) :-
     string_codes("\'", [Char | _]),
     X = Char,
@@ -227,7 +222,6 @@ is_tab_custom(X) :-
     char_code('\t', Y),
     X = Y,
     !.
-
 jsonaccess(_, [], _) :- !, fail.
 
 jsonaccess(jsonobj(), _, _) :- !, fail.
@@ -266,7 +260,6 @@ jsonaccess_member([_| Xs], Z, Result) :-
     string(Z),
     jsonaccess_member(Xs, Z, Result).
 
-
 jsonaccess_member_position([],[_], _) :- fail.
 jsonaccess_member_position([X | _], Y, Result) :-
     number(Y),
@@ -297,7 +290,7 @@ json_print(JSON, JString) :-
     !,
     JString = "{}".
 json_print(JSON, JString) :-
-    json_obj([Y | Ys]) = JSON,
+    jsonobj([Y | Ys]) = JSON,
     !,
     concat("", "{", JString1),
     json_print_object([Y | Ys], "", JString2),
