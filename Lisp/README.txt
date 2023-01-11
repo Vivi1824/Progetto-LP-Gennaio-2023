@@ -5,12 +5,12 @@ Gruppo:
 875068 Viviana Giuliani
 869310 Daniel Marco Gatti
 
-Il progetto si occupa di analizzare una stringa e trasformarla in un JSON 
-fornendo prima un modulo compatibile in Lisp. 
-Può recuperare un determinato valore da un JSON dato un elenco di parametri.
-Scrive e legge un JSON su/da un file.
+The project analyzes a string and transforms it into a JSON 
+providing a compatible module in Lisp first. 
+It can retrieve a certain value from a JSON given a list of parameters.
+Writes and reads a JSON to/from a file.
 
-1) jsonread(filename), per ottenere la forma compatibile in Lisp del file.json
-2) jsondump(json, filename), il json verrà scritto in un file con nome filename.
+1) jsonread(filename), to get the Lisp compatible form of the.json file
+2) jsondump(json, filename), the json will be written to a filename file.
 
-Si può utilizzare il programma anche con una stringa data chiamando jsonparse(json).
+You can also use the program with a given string by calling jsonparse(json).

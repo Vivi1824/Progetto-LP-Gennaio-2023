@@ -1,5 +1,0 @@
-(jsondump '(jsonobj ("nome" "Arthur") ("cognome" "Dent")) "foo.json")
-
-(jsonread (jsondump '(jsonobj ("nome" "Arthur") ("cognome" "Dent")) "foo.json"))
-
-Comandi per i/o
