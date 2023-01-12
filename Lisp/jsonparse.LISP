@@ -11,39 +11,39 @@
 ;;un errore o viene risultata una stringa corretta.
                                                                     
 (defun jsonparse (json)
-   (let ((json-list 
-          (funcall 'remove-ws (coerce json 'list))))
+  (let ((json-list 
+         (funcall 'remove-ws (coerce json 'list))))
     (cond
      ((equal (first json-list) '#\{) 
       (funcall 'parse-object (cdr json-list)))
      ((equal (first json-list) '#\[) 
       (funcall 'parse-array (cdr json-list)))
      (T (error "syntax-error-parse"))
-    )))
+     )))
 
 (defun parse-array (json)
-(let ((njson (funcall 'remove-ws json)))
-  (cond
-   ((and 
-     (equal (car njson) '#\])
-     (null (remove-ws (cdr njson)))) 
-    '(jsonarray))
-   (T (let ((result (parse-elements njson NIL)))
-        (if (null (remove-ws (car (cdr result))))
-            (append '(jsonarray) (car result))
-          (error "syntax-error-not-empty")))))))
+  (let ((njson (funcall 'remove-ws json)))
+    (cond
+     ((and 
+       (equal (car njson) '#\])
+       (null (remove-ws (cdr njson)))) 
+      '(jsonarray))
+     (T (let ((result (parse-elements njson NIL)))
+          (if (null (remove-ws (car (cdr result))))
+              (append '(jsonarray) (car result))
+            (error "syntax-error-not-empty")))))))
        
 (defun parse-object (json)
-(let ((njson (remove-ws json)))
-  (cond
-   ((and 
-     (equal (car njson) '#\})
-     (null (remove-ws (cdr njson)))) 
-    '(jsonobj))
-   (T (let ((result (parse-members njson NIL)))
-        (if (null (remove-ws (car (cdr result))))
-            (append '(jsonobj) (car result))
-          (error "syntax-error-not-empty")))))))
+  (let ((njson (remove-ws json)))
+    (cond
+     ((and 
+       (equal (car njson) '#\})
+       (null (remove-ws (cdr njson)))) 
+      '(jsonobj))
+     (T (let ((result (parse-members njson NIL)))
+          (if (null (remove-ws (car (cdr result))))
+              (append '(jsonobj) (car result))
+            (error "syntax-error-not-empty")))))))
 
 (defun parse-elements (json obj)
   (let ((result (parse-value json))) 
@@ -51,7 +51,7 @@
 
 (defun parse-members (json obj)
   (let ((result (parse-pair json)))
-  (delimiter-object result obj)))
+    (delimiter-object result obj)))
 
 (defun parse-pair (json)
   (let((njson (remove-ws json)))
@@ -61,17 +61,17 @@
       (error "syntax-error"))))
 
 (defun delimiter-comma (json)
-    (let((njson (remove-ws (car (cdr json))))
-        (obj (list (car json))))
+  (let((njson (remove-ws (car (cdr json))))
+       (obj (list (car json))))
     (if (equal (car njson) '#\:)
         (let ((result 
                (parse-value 
                 (remove-ws (cdr njson)))))
-           (append
-            (list (append 
-                   obj
-                   (list (car result))))
-            (list (car (cdr result)))))
+          (append
+           (list (append 
+                  obj
+                  (list (car result))))
+           (list (car (cdr result)))))
       (error "syntax-error-comma"))))
 
 (defun parse-value (json)
@@ -106,7 +106,7 @@
    (T (append 
        (list (parse-integer (coerce temp 'string)))
        (remove-ws (list json))))
-))
+   ))
 
 (defun parse-number-float (json temp)
   (cond
@@ -123,7 +123,7 @@
    (T (append 
        (list (parse-float (coerce temp 'string)))
        (remove-ws (list json))))
-))
+   ))
 
 (defun parse-string (json)
   (cond 
@@ -141,9 +141,9 @@
      (cdr json) 
      (append temp (list (car json)))))
    (T (append 
-        (list (coerce temp 'string))
-        (remove-ws (list (cdr json)))))
-))
+       (list (coerce temp 'string))
+       (remove-ws (list (cdr json)))))
+   ))
 
 (defun parse-string-dq (json temp)
   (cond
@@ -154,9 +154,9 @@
      (cdr json) 
      (append temp (list (car json)))))
    (T (append 
-        (list (coerce temp 'string))
-        (remove-ws (list (cdr json)))))
-))
+       (list (coerce temp 'string))
+       (remove-ws (list (cdr json)))))
+   ))
    
 (defun parse-nested (json)
   (cond
@@ -166,31 +166,31 @@
    ((equal (first json) '#\[) 
     (let ((result (parse-array-nested (cdr json))))
       result))
-    ))
+   ))
 
 (defun parse-array-nested (json)
   (let ((njson (remove-ws  json)))
-   (cond
-   ((equal (car njson) '#\]) 
-    (append 
-     (list '(jsonarray)) 
-     (list (cdr njson))))
-   (T (let ((result (parse-elements njson NIL)))
-        (append 
-         (list (append '(jsonarray) (car result))) 
-         (list (car (cdr result)))))))))
+    (cond
+     ((equal (car njson) '#\]) 
+      (append 
+       (list '(jsonarray)) 
+       (list (cdr njson))))
+     (T (let ((result (parse-elements njson NIL)))
+          (append 
+           (list (append '(jsonarray) (car result))) 
+           (list (car (cdr result)))))))))
 
 (defun parse-object-nested (json)
   (let ((njson (remove-ws json)))
-   (cond
-   ((equal (car njson) '#\}) 
-    (append 
-     (list '(jsonobj)) 
-     (list (cdr njson))))
-   (T (let ((result (parse-members njson NIL))) 
-        (append 
-         (list (append '(jsonobj) (car result))) 
-         (list (car (cdr result)))))))))
+    (cond
+     ((equal (car njson) '#\}) 
+      (append 
+       (list '(jsonobj)) 
+       (list (cdr njson))))
+     (T (let ((result (parse-members njson NIL))) 
+          (append 
+           (list (append '(jsonobj) (car result))) 
+           (list (car (cdr result)))))))))
 
 (defun delimiter-array (json obj)
   (let ((nobj (append obj (list (car json))))
@@ -285,18 +285,18 @@
   (with-open-file (stream filename 
                           :direction :input 
                           :if-does-not-exist :error)
-    (let ((contents (make-string (file-length stream))))
-       (let ((position (read-sequence contents stream))) 
-         (jsonparse (subseq contents 0 position))))))
+		  (let ((contents (make-string (file-length stream))))
+		    (let ((position (read-sequence contents stream))) 
+		      (jsonparse (subseq contents 0 position))))))
 
 (defun jsondump (JSON filename)
   (cond((null filename) (error "Filename is NIL"))
        (T (with-open-file 
-              (stream filename 
-                          :direction :output 
-                          :if-exists :supersede
-                          :if-does-not-exist :create)
-            (format stream (to-string JSON))))))
+           (stream filename 
+                   :direction :output 
+                   :if-exists :supersede
+                   :if-does-not-exist :create)
+           (format stream (to-string JSON))))))
 
 (defun to-string (JSON)
   (cond
@@ -345,12 +345,12 @@
   (cond
    ((NULL JSON) "")
    (T (concatenate 'string 
-      (print-value (car JSON))
-       ","
-      (print-array (cdr JSON))
-    ))))
+		   (print-value (car JSON))
+		   ","
+		   (print-array (cdr JSON))
+		   ))))
 
 (defun remove-last-comma (JSON)
   (cond
-    ((string= "" JSON) JSON)
-    (T (subseq JSON 0 (- (length JSON) 1)))))
+   ((string= "" JSON) JSON)
+   (T (subseq JSON 0 (- (length JSON) 1)))))

@@ -48,7 +48,7 @@ jsonarray(CharsIn, CharsOut, ObjectIn, jsonarray(ObjectOut)) :-
     elements(Chars2, Chars3, ObjectIn, ObjectOut),
     remove_ws(Chars3, Chars4),
     first_char("]", Chars4, CharsOut).
-	
+
 members(CharsIn, CharsOut, ObjectIn, ObjectOut1) :-
     pairing(CharsIn, Chars2, ObjectIn, ObjectOut),
     remove_ws(Chars2, Chars3),
@@ -180,7 +180,7 @@ creation_ss([X | Xs], [X | Xs], []) :-
     !.
 creation_ss([X | Xs], Zs, [X | Ys]) :-
     creation_ss(Xs, Zs, Ys).
-	
+
 creation_sq([X | _], _, _) :-
     string_codes("\'", [Char | _]),
     X = Char,
@@ -239,7 +239,7 @@ jsonaccess(JSON_obj, [X|Xs], Result) :-
 jsonaccess(JSON_obj, X, Result) :-
     jsonaccess_elements(JSON_obj, X, Result),
     !.
-	
+
 jsonaccess_elements(JSON_obj, Fields, Result) :-
     jsonobj([Y|Ys]) = JSON_obj,
     !,
