@@ -9,7 +9,7 @@
 ;;L'idea è quella di consumare un carattere dopo l'altro,
 ;;partendo da sinistra verso destra finchè o non viene trovato
 ;;un errore o viene risultata una stringa corretta.
-                                                                    
+                                                              
 (defun jsonparse (json)
   (let ((json-list 
          (funcall 'remove-ws (coerce json 'list))))
@@ -54,15 +54,15 @@
     (delimiter-object result obj)))
 
 (defun parse-pair (json)
-  (let((njson (remove-ws json)))
+  (let ((njson (remove-ws json)))
     (if (or (equal (car njson) '#\") (equal (car njson) '#\'))
         (let ((result (parse-string njson)))
           (delimiter-comma result))
       (error "syntax-error"))))
 
 (defun delimiter-comma (json)
-  (let((njson (remove-ws (car (cdr json))))
-       (obj (list (car json))))
+  (let ((njson (remove-ws (car (cdr json))))
+	(obj (list (car json))))
     (if (equal (car njson) '#\:)
         (let ((result 
                (parse-value 
@@ -290,13 +290,13 @@
 		      (jsonparse (subseq contents 0 position))))))
 
 (defun jsondump (JSON filename)
-  (cond((null filename) (error "Filename is NIL"))
-       (T (with-open-file 
-           (stream filename 
-                   :direction :output 
-                   :if-exists :supersede
-                   :if-does-not-exist :create)
-           (format stream (to-string JSON))))))
+  (cond ((null filename) (error "Filename is NIL"))
+	(T (with-open-file 
+            (stream filename 
+                    :direction :output 
+                    :if-exists :supersede
+                    :if-does-not-exist :create)
+            (format stream (to-string JSON))))))
 
 (defun to-string (JSON)
   (cond
